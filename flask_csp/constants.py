@@ -72,6 +72,7 @@ class FetchRestriction(Enum):
     HTTP = "http:"
     HTTPS = "https:"
     DATA = "data:"
+    BLOB = "blob:"
 
     # Other restrictions can be a domain, a wildcard domain, either of those
     # with a scheme specified, a `nonce` value or a `sha*` hash. i.e.:
