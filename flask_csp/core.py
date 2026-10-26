@@ -43,10 +43,16 @@ def set_csp_header(resp, options):
            and not isinstance(resp.headers, MultiDict)):
         resp.headers = MultiDict(resp.headers)
 
+    report_groups = get_report_groups(options.get('report_to'))
+
     header = (ReportOnlyPolicy if options.get('report_only', False) else ContentSecurityPolicy)()
     for option, restrictions in options.items():
         if option in NON_DIRECTIVE_OPTIONS or not restrictions:
             continue
+        # The report-to directive can only name a single group, which must be
+        # defined in the Report-To header
+        if option == 'report_to' and report_groups:
+            restrictions = report_groups[0].name
         if not isinstance(restrictions, (list, set, tuple, )):
             restrictions = [restrictions]
         header.add(load_directive(option, *restrictions))
@@ -54,21 +60,37 @@ def set_csp_header(resp, options):
     LOG.debug('Settings CSP header: %s', header.value)
     resp.headers.add(header.key, header.value)
 
-    if options.get('report_to'):
-        report_to = ReportTo()
-        report_groups = options['report_to']
-        if not isinstance(report_groups, (list, set, tuple,)):
-            report_groups = [report_groups]
-        for group in report_groups:
-            report_to.add(
+    if report_groups:
+        report_to = ReportTo(report_groups)
+        resp.headers.add(report_to.key, report_to.value)
+
+    return resp
+
+
+def get_report_groups(report_to):
+    """
+    Returns the ReportGroups defined by the report_to option. A plain string
+    only names a group for the report-to directive, so defines no groups.
+    """
+
+    if not report_to:
+        return []
+
+    if not isinstance(report_to, (list, set, tuple,)):
+        report_to = [report_to]
+
+    groups = []
+    for group in report_to:
+        if isinstance(group, ReportGroup):
+            groups.append(group)
+        elif isinstance(group, dict):
+            groups.append(
                 ReportGroup(group['name'],
                             group['endpoints'],
                             max_age=group.get('max_age', None))
             )
 
-        resp.headers.add(report_to.key, report_to.value)
-
-    return resp
+    return groups
 
 
 def get_csp_options(app, *dicts):

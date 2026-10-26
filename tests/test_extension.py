@@ -94,3 +94,50 @@ def test_extension_csp_header(request, test_app, route, csp_state, csp_report_st
             assert rv.status_code == 200
             assert rv.headers.get('Content-Security-Policy') == csp_state
             assert rv.headers.get('Content-Security-Policy-Report-Only') == csp_report_state
+
+
+@pytest.mark.parametrize('report_to, csp_state, report_to_state', [
+    (
+        'csp-endpoint',
+        "default-src 'self'; report-to csp-endpoint",
+        None,
+    ),
+    (
+        {'name': 'csp-endpoint', 'endpoints': 'https://example.com/csp/receiver'},
+        "default-src 'self'; report-to csp-endpoint",
+        '{"endpoints": [{"url": "https://example.com/csp/receiver"}], "group": "csp-endpoint", "max_age": 3600}',
+    ),
+    (
+        [
+            {'name': 'csp-endpoint', 'endpoints': 'https://example.com/csp/receiver', 'max_age': 60},
+            {'name': 'other-endpoint', 'endpoints': ['https://example.com/other/receiver']},
+        ],
+        "default-src 'self'; report-to csp-endpoint",
+        '{"endpoints": [{"url": "https://example.com/csp/receiver"}], "group": "csp-endpoint", "max_age": 60},'
+        '{"endpoints": [{"url": "https://example.com/other/receiver"}], "group": "other-endpoint", "max_age": 3600}',
+    ),
+])
+def test_extension_report_to(base_app, report_to, csp_state, report_to_state):
+    """Ensure that report_to names a single group in the CSP and defines groups in Report-To"""
+
+    CSP(base_app, report_to=report_to)
+
+    with base_app.test_client() as c:
+        rv = c.get('/undecorated')
+        assert rv.headers.get('Content-Security-Policy') == csp_state
+        assert rv.headers.get('Report-To') == report_to_state
+
+
+def test_extension_report_only_with_report_to_group(base_app):
+    """Ensure that a report_to group satisfies the report-only policy requirement"""
+
+    CSP(base_app, report_only=True, report_to={
+        'name': 'csp-endpoint',
+        'endpoints': 'https://example.com/csp/receiver',
+    })
+
+    with base_app.test_client() as c:
+        rv = c.get('/undecorated')
+        assert rv.headers.get('Content-Security-Policy-Report-Only') == (
+            "default-src 'self'; report-to csp-endpoint"
+        )
