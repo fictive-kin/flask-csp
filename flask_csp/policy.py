@@ -58,10 +58,7 @@ class BaseDirective:
         restrictions = []
 
         for restriction in self.restrictions:
-            if callable(restriction):
-                restrictions.append(restriction())
-
-            elif isinstance(restriction, Enum):
+            if isinstance(restriction, Enum):
                 restrictions.append(restriction.value)
 
             else:
