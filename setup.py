@@ -50,10 +50,9 @@ if __name__ == "__main__":
         install_requires=[
             'Flask',
         ],
-        extras_requires={
+        extras_require={
             'tests': [
                 'pytest',
-                'pytest-lazy-fixture',
                 'pytest-cov',
                 'pytest-randomly',
             ],

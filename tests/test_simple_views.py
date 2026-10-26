@@ -13,15 +13,18 @@ csp_content_type = {  # pylint: disable=invalid-name
 
 
 @pytest.mark.parametrize('headers, csp_report, status_code', [
-    (csp_content_type, pytest.lazy_fixture('minimal_csp_report'), 204,),
-    (csp_content_type, pytest.lazy_fixture('full_csp_report'), 204,),
-    ({}, pytest.lazy_fixture('minimal_csp_report'), 400,),
-    ({}, pytest.lazy_fixture('full_csp_report'), 400,),
+    (csp_content_type, 'minimal_csp_report', 204,),
+    (csp_content_type, 'full_csp_report', 204,),
+    ({}, 'minimal_csp_report', 400,),
+    ({}, 'full_csp_report', 400,),
     (csp_content_type, {}, 400,),
     ({}, {}, 400,),
 ])
-def test_simple_submission(receiver_app, headers, csp_report, status_code):
+def test_simple_submission(request, receiver_app, headers, csp_report, status_code):
     """Ensure that the simple CSP report receiver accepts reports"""
+
+    if isinstance(csp_report, str):
+        csp_report = request.getfixturevalue(csp_report)
 
     with receiver_app.app_context():
         with receiver_app.test_client() as c:

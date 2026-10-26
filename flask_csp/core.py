@@ -16,6 +16,9 @@ from .policy import ReportGroup, ReportTo, ContentSecurityPolicy, ReportOnlyPoli
 
 LOG = logging.getLogger(__name__)
 
+# Options that change how the header is sent, rather than being directives within it
+NON_DIRECTIVE_OPTIONS = ['report_only',]
+
 
 def set_csp_header(resp, options):
     """
@@ -40,10 +43,9 @@ def set_csp_header(resp, options):
            and not isinstance(resp.headers, MultiDict)):
         resp.headers = MultiDict(resp.headers)
 
-    non_directive_options = ['report_only',]
     header = (ReportOnlyPolicy if options.get('report_only', False) else ContentSecurityPolicy)()
     for option, restrictions in options.items():
-        if option in non_directive_options or not restrictions:
+        if option in NON_DIRECTIVE_OPTIONS or not restrictions:
             continue
         if not isinstance(restrictions, (list, set, tuple, )):
             restrictions = [restrictions]
@@ -93,8 +95,10 @@ def get_app_kwarg_dict(app=None):
     # In order to support blueprints which do not have a config attribute
     app_config = getattr(app, 'config', {})
 
+    option_names = [k.name.lower() for k in Directive] + NON_DIRECTIVE_OPTIONS
+
     return {
-        k.name.lower(): app_config.get(f'CSP_{k.name.upper()}')
-        for k in Directive
-        if app_config.get(f'CSP_{k.name.upper()}') is not None
+        name: app_config.get(f'CSP_{name.upper()}')
+        for name in option_names
+        if app_config.get(f'CSP_{name.upper()}') is not None
     }

@@ -8,10 +8,12 @@ from flask_csp.decorator import csp
 
 
 @pytest.mark.parametrize('test_app, csp_state, csp_report_state', [
-    (pytest.lazy_fixture('decorated_app'), True, False,),
+    ('decorated_app', True, False,),
 ])
-def test_decorator(test_app, csp_state, csp_report_state):
+def test_decorator(request, test_app, csp_state, csp_report_state):
     """Ensure that the CSP decorator adds the CSP header"""
+
+    test_app = request.getfixturevalue(test_app)
 
     with test_app.app_context():
         with test_app.test_client() as c:
@@ -33,10 +35,12 @@ def test_decorator(test_app, csp_state, csp_report_state):
 
 
 @pytest.mark.parametrize('test_app, csp_state, csp_report_state', [
-    (pytest.lazy_fixture('decorated_app'), False, True,),
+    ('decorated_app', False, True,),
 ])
-def test_decorator_report_only(test_app, csp_state, csp_report_state):
+def test_decorator_report_only(request, test_app, csp_state, csp_report_state):
     """Ensure that the CSP decorator adds the CSP header for report only"""
+
+    test_app = request.getfixturevalue(test_app)
 
     with test_app.app_context():
         with test_app.test_client() as c:

@@ -10,12 +10,14 @@ from flask_csp import CSP
 
 
 @pytest.mark.parametrize('test_app, state', [
-    (pytest.lazy_fixture('base_app'), False,),
-    (pytest.lazy_fixture('app'), True,),
-    (pytest.lazy_fixture('receiver_app'), True,),
+    ('base_app', False,),
+    ('app', True,),
+    ('receiver_app', True,),
 ])
-def test_after_request_added(test_app, state):
+def test_after_request_added(request, test_app, state):
     """Ensure that the simple CSP extension adds the after request processor"""
+
+    test_app = request.getfixturevalue(test_app)
 
     after_request_found = False
     for k,v in test_app.after_request_funcs.items():
@@ -28,12 +30,14 @@ def test_after_request_added(test_app, state):
 
 
 @pytest.mark.parametrize('test_app, state', [
-    (pytest.lazy_fixture('base_app'), False,),
-    (pytest.lazy_fixture('app'), False,),
-    (pytest.lazy_fixture('receiver_app'), True,),
+    ('base_app', False,),
+    ('app', False,),
+    ('receiver_app', True,),
 ])
-def test_receiver_route_added(test_app, state):
+def test_receiver_route_added(request, test_app, state):
     """Ensure that the receiver blueprint does not get added when no prefix is provided"""
+
+    test_app = request.getfixturevalue(test_app)
 
     receiver_route_found = False
     for rule in test_app.url_map.iter_rules():
@@ -44,16 +48,45 @@ def test_receiver_route_added(test_app, state):
     assert receiver_route_found == state
 
 
+def test_extension_report_only_from_config(base_app):
+    """Ensure that report_only can be set via the app config, like the directives"""
+
+    base_app.config['CSP_REPORT_ONLY'] = True
+    base_app.config['CSP_REPORT_URI'] = 'https://example.com/report/receiver'
+    CSP(base_app)
+
+    with base_app.test_client() as c:
+        rv = c.get('/undecorated')
+        assert rv.headers.get('Content-Security-Policy') is None
+        assert rv.headers.get('Content-Security-Policy-Report-Only') == (
+            "default-src 'self'; report-uri https://example.com/report/receiver"
+        )
+
+
+def test_extension_report_only_kwarg_overrides_config(base_app):
+    """Ensure that the extension kwargs take precedence over the app config for report_only"""
+
+    base_app.config['CSP_REPORT_ONLY'] = True
+    CSP(base_app, report_only=False)
+
+    with base_app.test_client() as c:
+        rv = c.get('/undecorated')
+        assert rv.headers.get('Content-Security-Policy') == "default-src 'self'"
+        assert rv.headers.get('Content-Security-Policy-Report-Only') is None
+
+
 @pytest.mark.parametrize('test_app, route, csp_state, csp_report_state', [
-    (pytest.lazy_fixture('app'), '/undecorated', "default-src 'self'", None,),
-    (pytest.lazy_fixture('receiver_app'), '/undecorated', "default-src 'self'", None,),
-    (pytest.lazy_fixture('report_only_app'), '/undecorated', None, "default-src 'self'; report-uri https://example.com/report/receiver",),
-    (pytest.lazy_fixture('app'), '/extension/decorated/report-only', None, "default-src 'self'; report-uri https://example.com/csp/receiver",),
-    (pytest.lazy_fixture('receiver_app'), '/extension/decorated/report-only', None, "default-src 'self'; report-uri https://example.com/csp/receiver",),
-    (pytest.lazy_fixture('report_only_app'), '/report-only/extension/decorated', "default-src 'self'", None,),
+    ('app', '/undecorated', "default-src 'self'", None,),
+    ('receiver_app', '/undecorated', "default-src 'self'", None,),
+    ('report_only_app', '/undecorated', None, "default-src 'self'; report-uri https://example.com/report/receiver",),
+    ('app', '/extension/decorated/report-only', None, "default-src 'self'; report-uri https://example.com/csp/receiver",),
+    ('receiver_app', '/extension/decorated/report-only', None, "default-src 'self'; report-uri https://example.com/csp/receiver",),
+    ('report_only_app', '/report-only/extension/decorated', "default-src 'self'", None,),
 ])
-def test_extension_csp_header(test_app, route, csp_state, csp_report_state):
+def test_extension_csp_header(request, test_app, route, csp_state, csp_report_state):
     """Ensure that the CSP extension adds the CSP header appropriately"""
+
+    test_app = request.getfixturevalue(test_app)
 
     with test_app.app_context():
         with test_app.test_client() as c:
