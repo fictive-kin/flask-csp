@@ -61,6 +61,33 @@ Some directives take restricted values:
 ``report_uri``
    A single URL.
 
+``report_to``
+   Either the name of a reporting group defined elsewhere, or one or more groups to define, each a
+   :py:class:`dict` with:
+
+   * ``name``: the group name
+   * ``endpoints``: a URL, or a list of URLs, to send reports to
+   * ``max_age`` (optional): how many seconds browsers should remember the group for. Defaults
+     to ``3600``.
+
+   Groups given as dicts are sent in a ``Report-To`` header. The ``report-to`` directive can only
+   name one group, so it uses the first one:
+
+   .. code:: python
+
+      CSP(app, report_to={
+          'name': 'csp-endpoint',
+          'endpoints': 'https://example.com/csp/receiver',
+      })
+
+   produces::
+
+      Content-Security-Policy: default-src 'self'; report-to csp-endpoint
+      Report-To: {"endpoints": [{"url": "https://example.com/csp/receiver"}], "group": "csp-endpoint", "max_age": 3600}
+
+   Browsers that support ``report-to`` ignore ``report-uri``, so setting both is a good way to
+   cover older browsers.
+
 ``upgrade_insecure_requests``
    Takes no value; set it to ``True`` to include it.
 
@@ -80,7 +107,7 @@ Navigation directives
    ``form_action``, ``frame_ancestors``, ``navigate_to``
 
 Reporting directives
-   ``report_uri``
+   ``report_to``, ``report_uri`` (deprecated)
 
 Other directives
    ``require_sri_for``, ``require_trusted_types_for``, ``trusted_types``,
@@ -91,7 +118,7 @@ Other options
 
 ``report_only`` / ``CSP_REPORT_ONLY`` (:py:class:`bool`)
    Send the policy as ``Content-Security-Policy-Report-Only`` instead of
-   ``Content-Security-Policy``. Requires a ``report_uri``.
+   ``Content-Security-Policy``. Requires a ``report_uri`` or ``report_to``.
 
 ``intercept_exceptions`` (:py:class:`bool`, extension only)
    Whether to also add the header to responses produced by Flask's exception handlers.
