@@ -11,6 +11,7 @@ from flask_csp.constants import (
 )
 from flask_csp.policy import (
     is_allowed_directive, is_allowed_fetch_restriction, is_allowed_sandbox_restriction, is_allowed_trustedtype_restriction, load_directive,
+    BaseDirective,
     SourceDirective,
     SimpleDirective,
     EmptyDirective,
@@ -63,6 +64,8 @@ def test_allowed_items():
     (Directive.DEFAULT_SRC, SourceDirective,),
     (Directive.SANDBOX, SandboxDirective,),
     (Directive.UPGRADE_INSECURE_REQUESTS, EmptyDirective,),
+    (Directive.REPORT_URI, SimpleDirective,),
+    (Directive.TRUSTED_TYPES, TrustedTypesDirective,),
 ])
 def test_load_directive(directive, result):
     """Ensure that load directive returns the correct types"""
@@ -83,6 +86,27 @@ def test_load_directive_fails(directive):
 
     with pytest.raises(ValueError):
         load_directive(directive)
+
+
+@pytest.mark.parametrize('invalid', [
+    lambda: BaseDirective(Directive.DEFAULT_SRC, ''),
+    lambda: EmptyDirective(Directive.DEFAULT_SRC),
+    lambda: EmptyDirective(Directive.UPGRADE_INSECURE_REQUESTS).add('value'),
+    lambda: SimpleDirective(Directive.REPORT_URI, ''),
+    lambda: SimpleDirective(Directive.REPORT_URI, FetchRestriction.SELF),
+    lambda: SimpleDirective(Directive.REPORT_URI, 'https://a.example.com', 'https://b.example.com'),
+    lambda: SandboxDirective(''),
+    lambda: SandboxDirective('allow-everything'),
+    lambda: TrustedTypesDirective(''),
+    lambda: SourceDirective(Directive.DEFAULT_SRC, ''),
+    lambda: ReportTo('not-a-group'),
+    lambda: ContentSecurityPolicy('not-a-directive'),
+])
+def test_invalid_policy_values(invalid):
+    """Ensure that invalid directives, restrictions and headers are rejected"""
+
+    with pytest.raises(ValueError):
+        invalid()
 
 
 def test_header():
@@ -111,6 +135,10 @@ def test_header():
     (
         ReportGroup('single-endpoint-max-age', 'https://example.com/csp/receiver', max_age=60),
         '{"endpoints": [{"url": "https://example.com/csp/receiver"}], "group": "single-endpoint-max-age", "max_age": 60}',
+    ),
+    (
+        [ReportGroup('no-endpoints', None), None],
+        '{"endpoints": [], "group": "no-endpoints", "max_age": 3600}',
     ),
 ])
 def test_report_to(groups, result):
@@ -144,6 +172,14 @@ def test_report_to(groups, result):
             SimpleDirective(Directive.REPORT_URI, 'https://example.com/csp/receiver'),
         ],
         'upgrade-insecure-requests; report-uri https://example.com/csp/receiver',
+    ),
+    (
+        [
+            SandboxDirective(SandboxRestriction.ALLOW_SCRIPTS, 'allow-forms'),
+            TrustedTypesDirective('my-policy', TrustedTypesRestriction.ALLOW_DUPLICATES),
+            load_directive(SourceDirective(Directive.IMG_SRC, 'data:')),
+        ],
+        "sandbox allow-scripts allow-forms; trusted-types my-policy 'allow-duplicates'; img-src data:",
     ),
 ])
 def test_csp(csp_directives, result):

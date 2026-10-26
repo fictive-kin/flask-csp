@@ -48,6 +48,27 @@ def test_receiver_route_added(request, test_app, state):
     assert receiver_route_found == state
 
 
+@pytest.mark.parametrize('intercept_exceptions', [True, False])
+def test_extension_intercept_exceptions(base_app, intercept_exceptions):
+    """Ensure that intercept_exceptions is not treated as a CSP directive"""
+
+    CSP(base_app, intercept_exceptions=intercept_exceptions)
+
+    with base_app.test_client() as c:
+        rv = c.get('/undecorated')
+        assert rv.status_code == 200
+        assert rv.headers.get('Content-Security-Policy') == "default-src 'self'"
+
+
+def test_extension_rejects_invalid_targets(base_app):
+    """Ensure that the extension can only be initialized on apps and blueprints"""
+
+    with pytest.raises(ValueError):
+        CSP().init_app(object())
+    with pytest.raises(ValueError):
+        CSP().init_blueprint(base_app)
+
+
 def test_extension_report_only_from_config(base_app):
     """Ensure that report_only can be set via the app config, like the directives"""
 
