@@ -17,13 +17,13 @@ def base_app():
     Create a Flask app context for the tests without the CSP extension.
     """
 
-    os.environ['FLASK_ENV'] = 'testing'
-    app = Flask('testing')
-    app.config['SERVER_NAME'] = 'localhost:5000'
+    os.environ["FLASK_ENV"] = "testing"
+    app = Flask("testing")
+    app.config["SERVER_NAME"] = "localhost:5000"
 
-    @app.route('/undecorated')
+    @app.route("/undecorated")
     def undecorated():
-        return 'Should only have the CSP header when CSP extension is active', 200
+        return "Should only have the CSP header when CSP extension is active", 200
 
     yield app
 
@@ -36,14 +36,14 @@ def app(base_app):
 
     CSP(base_app)
 
-    @base_app.route('/extension/decorated/report-only')
+    @base_app.route("/extension/decorated/report-only")
     @csp(
         report_only=True,
-        report_uri='https://example.com/csp/receiver',
+        report_uri="https://example.com/csp/receiver",
         default_src=FetchRestriction.SELF,
     )
     def decorated_report_only():
-        return 'Some decorated route while extension is active', 200
+        return "Some decorated route while extension is active", 200
 
     yield base_app
 
@@ -54,16 +54,16 @@ def receiver_app(base_app):
     Creates a Flask app for the tests with the CSP extension and simple receiver
     """
 
-    @base_app.route('/extension/decorated/report-only')
+    @base_app.route("/extension/decorated/report-only")
     @csp(
         report_only=True,
-        report_uri='https://example.com/csp/receiver',
+        report_uri="https://example.com/csp/receiver",
         default_src=FetchRestriction.SELF,
     )
     def decorated_report_only():
-        return 'Some decorated route while extension is active', 200
+        return "Some decorated route while extension is active", 200
 
-    CSP(base_app, receiver_prefix='/csp')
+    CSP(base_app, receiver_prefix="/csp")
     yield base_app
 
 
@@ -73,12 +73,17 @@ def report_only_app(base_app):
     Creates a Flask app for the tests with the CSP extension and simple receiver
     """
 
-    @base_app.route('/report-only/extension/decorated')
+    @base_app.route("/report-only/extension/decorated")
     @csp(report_only=False)
     def decorated_non_report():
-        return 'Should return regular CSP header, not report-only one', 200
+        return "Should return regular CSP header, not report-only one", 200
 
-    CSP(base_app, receiver_prefix='/csp', report_only=True, report_uri='https://example.com/report/receiver')
+    CSP(
+        base_app,
+        receiver_prefix="/csp",
+        report_only=True,
+        report_uri="https://example.com/report/receiver",
+    )
     yield base_app
 
 
@@ -93,9 +98,8 @@ def minimal_csp_report():
             "document-uri": "http://example.com/signup.html",
             "blocked-uri": "http://example.com/css/style.css",
             "violated-directive": "style-src cdn.example.com",
-            "original-policy":
-                "default-src 'none'; style-src cdn.example.com; report-uri /_/csp-reports",
-            "disposition": "report"
+            "original-policy": "default-src 'none'; style-src cdn.example.com; report-uri /_/csp-reports",
+            "disposition": "report",
         }
     }
 
@@ -106,14 +110,16 @@ def full_csp_report(minimal_csp_report):
     A CSP report with most keys set
     """
 
-    minimal_csp_report.update({
-        "effective-directive": "style-src",
-        "referrer": "",
-        "line-number": 8,
-        "source-file": "http://example.com/css/style.css",
-        "status-code": 0,
-        "script-sample": ".somthing { height: 100% }",
-    })
+    minimal_csp_report.update(
+        {
+            "effective-directive": "style-src",
+            "referrer": "",
+            "line-number": 8,
+            "source-file": "http://example.com/css/style.css",
+            "status-code": 0,
+            "script-sample": ".somthing { height: 100% }",
+        }
+    )
     return minimal_csp_report
 
 
@@ -123,27 +129,31 @@ def decorated_app(base_app):
     A simple Flask app with a CSP decorated route
     """
 
-    @base_app.route('/decorated')
+    @base_app.route("/decorated")
     @csp
     def decorated_route():
-        return 'Some decorated route', 200
+        return "Some decorated route", 200
 
-    @base_app.route('/decorated/report-only')
+    @base_app.route("/decorated/report-only")
     @csp(
         report_only=True,
-        report_uri='https://example.com/csp/receiver',
+        report_uri="https://example.com/csp/receiver",
         default_src=FetchRestriction.SELF,
     )
     def decorated_report_only():
-        return 'Some decorated route', 200
+        return "Some decorated route", 200
 
-    @base_app.route('/decorated/style-src')
+    @base_app.route("/decorated/style-src")
     @csp(
-        style_src=[FetchRestriction.SELF, FetchRestriction.UNSAFE_INLINE, '*.example.com'],
+        style_src=[
+            FetchRestriction.SELF,
+            FetchRestriction.UNSAFE_INLINE,
+            "*.example.com",
+        ],
         upgrade_insecure_requests=True,
-        report_uri='https://example.com/csp/receiver',
+        report_uri="https://example.com/csp/receiver",
     )
     def style_src_decorated():
-        return 'Should include style-src CSP rule', 200
+        return "Should include style-src CSP rule", 200
 
     yield base_app

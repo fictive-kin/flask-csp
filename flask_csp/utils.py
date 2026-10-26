@@ -7,7 +7,7 @@ import logging
 
 from flask import abort, request
 
-LOG = logging.getLogger('flask_csp.receiver')
+LOG = logging.getLogger("flask_csp.receiver")
 
 
 def get_submitted_report():
@@ -18,7 +18,7 @@ def get_submitted_report():
     if request.content_type != "application/csp-report":
         return abort(400)
 
-    csp_report = json.loads(request.data).get('csp-report', {})
+    csp_report = json.loads(request.data).get("csp-report", {})
     if not csp_report:
         return abort(400)
 

@@ -8,11 +8,11 @@ from flask import Blueprint, abort, make_response
 
 from ..utils import get_submitted_report
 
-LOG = logging.getLogger('flask_csp.receiver')
-CSP_BP = Blueprint('csp', __name__)
+LOG = logging.getLogger("flask_csp.receiver")
+CSP_BP = Blueprint("csp", __name__)
 
 
-@CSP_BP.route('/report', methods=['POST'])
+@CSP_BP.route("/report", methods=["POST"])
 def receiver():
     """
     A simple receiver that outputs CSP reports to the log
@@ -34,10 +34,10 @@ def receiver():
     """
 
     get_submitted_report()
-    return make_response('', 204)
+    return make_response("", 204)
 
 
-@CSP_BP.route('/reports/review', methods=['GET', 'POST'])
+@CSP_BP.route("/reports/review", methods=["GET", "POST"])
 def review():
     """
     Lists and searches received reports

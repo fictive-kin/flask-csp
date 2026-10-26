@@ -19,6 +19,7 @@ try:
     from .sqlalchemy.views import (
         get_session_factory,
     )
+
     SQLALCHEMY = True
 except ImportError:
     SQLALCHEMY = False
@@ -62,13 +63,15 @@ class CSP:
         self._sqlalchemy = sqlalchemy
 
         if app is not None:
-            self.init_app(app, receiver_prefix=receiver_prefix, sqlalchemy=sqlalchemy, **kwargs)
+            self.init_app(
+                app, receiver_prefix=receiver_prefix, sqlalchemy=sqlalchemy, **kwargs
+            )
 
     def init_app(self, app, *, receiver_prefix=None, sqlalchemy=None, **kwargs):
         """App initialization for the extension"""
 
         if not isinstance(app, Flask):
-            raise ValueError('Provided value was not a Flask app instance')
+            raise ValueError("Provided value was not a Flask app instance")
 
         self.setup_after_request(app, **kwargs)
 
@@ -78,29 +81,35 @@ class CSP:
             self._sqlalchemy = sqlalchemy
 
         # These error handlers will still respect the behavior of the route
-        if self._options.get('intercept_exceptions', True):
+        if self._options.get("intercept_exceptions", True):
+
             def _after_request_decorator(f):
                 def wrapped_function(*args, **kwargs):
                     return self.after_request(app.make_response(f(*args, **kwargs)))
+
                 return wrapped_function
 
-            if hasattr(app, 'handle_exception'):
-                app.handle_exception = _after_request_decorator(
-                    app.handle_exception)
+            if hasattr(app, "handle_exception"):
+                app.handle_exception = _after_request_decorator(app.handle_exception)
                 app.handle_user_exception = _after_request_decorator(
-                    app.handle_user_exception)
+                    app.handle_user_exception
+                )
 
         if self._receiver_prefix is None:
             LOG.info(
-                'Report receiving is disabled. To enable automatically, set `receiver_prefix`.')
+                "Report receiving is disabled. To enable automatically, set `receiver_prefix`."
+            )
             return
 
         if self._sqlalchemy:
             if not SQLALCHEMY:
                 raise ValueError(
-                    'Cannot load SQLAlchemy CSP views. Install flask-csp[full] to use them')
+                    "Cannot load SQLAlchemy CSP views. Install flask-csp[full] to use them"
+                )
 
-            app.extensions[SQLALCHEMY_EXTENSION_KEY] = get_session_factory(self._sqlalchemy)
+            app.extensions[SQLALCHEMY_EXTENSION_KEY] = get_session_factory(
+                self._sqlalchemy
+            )
             app.register_blueprint(sqlalchemy_bp, url_prefix=self._receiver_prefix)
 
         else:
@@ -110,7 +119,7 @@ class CSP:
         """Blueprint initialization for the extension"""
 
         if not isinstance(blueprint, Blueprint):
-            raise ValueError('Provided value was not a Blueprint instance')
+            raise ValueError("Provided value was not a Blueprint instance")
 
         self.setup_after_request(blueprint, **kwargs)
 

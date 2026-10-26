@@ -18,15 +18,20 @@ from .constants import (
 def is_allowed_enum_value(type_, item, allowed=None):
     if not isinstance(item, type_):
         try:
-            maybe_key = str(item).upper().replace('-','_').replace("'",'').replace(':','')
+            maybe_key = (
+                str(item).upper().replace("-", "_").replace("'", "").replace(":", "")
+            )
             item = type_[maybe_key]
         except KeyError as exc:
-            raise ValueError(f'Not a valid {type_.__name__}: {item}') from exc
+            raise ValueError(f"Not a valid {type_.__name__}: {item}") from exc
 
     if allowed and item not in allowed:
-        raise ValueError(f'{item.value} is not accepted. Can only be one of {allowed!s}')
+        raise ValueError(
+            f"{item.value} is not accepted. Can only be one of {allowed!s}"
+        )
 
     return item
+
 
 def is_allowed_directive(item, allowed=None):
     return is_allowed_enum_value(Directive, item, allowed)
@@ -68,11 +73,11 @@ class BaseDirective:
             else:
                 restrictions.append(str(restriction))
 
-        return f'{self.directive.value} {" ".join(restrictions)}'
+        return f"{self.directive.value} {' '.join(restrictions)}"
 
     def add(self, restriction):
         if not restriction:
-            raise ValueError('Cannot add an empty restriction to a directive')
+            raise ValueError("Cannot add an empty restriction to a directive")
 
         if isinstance(self.restrictions, set):
             self.restrictions.add(restriction)
@@ -95,7 +100,7 @@ class EmptyDirective(BaseDirective):
         return self.directive.value
 
     def add(self, restriction):
-        raise ValueError('You cannot add restrictions to an EmptyDirective')
+        raise ValueError("You cannot add restrictions to an EmptyDirective")
 
 
 class SimpleDirective(BaseDirective):
@@ -107,17 +112,21 @@ class SimpleDirective(BaseDirective):
     ]
 
     def __str__(self):
-        return f'{self.directive.value} {self.restrictions[0]}'
+        return f"{self.directive.value} {self.restrictions[0]}"
 
     def add(self, restriction):
         if not restriction:
-            raise ValueError('Cannot add an empty restriction to a directive')
+            raise ValueError("Cannot add an empty restriction to a directive")
 
         if isinstance(restriction, Enum):
-            raise ValueError('You can only add string value restrictions to a SimpleDirective')
+            raise ValueError(
+                "You can only add string value restrictions to a SimpleDirective"
+            )
 
         if self.restrictions:
-            raise ValueError('You cannot add multiple restrictions to a SimpleDirective.')
+            raise ValueError(
+                "You cannot add multiple restrictions to a SimpleDirective."
+            )
 
         super().add(restriction)
 
@@ -136,14 +145,15 @@ class SandboxDirective(BaseDirective):
 
     def add(self, restriction):
         if not restriction:
-            raise ValueError('Cannot add an empty restriction to a directive')
+            raise ValueError("Cannot add an empty restriction to a directive")
 
         try:
             super().add(is_allowed_sandbox_restriction(restriction))
 
         except ValueError as exc:
             raise ValueError(
-                f'{restriction} is not an allowed SANDBOX restriction') from exc
+                f"{restriction} is not an allowed SANDBOX restriction"
+            ) from exc
 
 
 class TrustedTypesDirective(BaseDirective):
@@ -160,7 +170,7 @@ class TrustedTypesDirective(BaseDirective):
 
     def add(self, restriction):
         if not restriction:
-            raise ValueError('Cannot add an empty restriction to a directive')
+            raise ValueError("Cannot add an empty restriction to a directive")
 
         try:
             super().add(is_allowed_trustedtype_restriction(restriction))
@@ -177,15 +187,16 @@ class SourceDirective(BaseDirective):
     _allowed = [
         item
         for item in Directive
-        if item not in TrustedTypesDirective._allowed +
-            SandboxDirective._allowed +
-            SimpleDirective._allowed +
-            EmptyDirective._allowed
+        if item
+        not in TrustedTypesDirective._allowed
+        + SandboxDirective._allowed
+        + SimpleDirective._allowed
+        + EmptyDirective._allowed
     ]
 
     def add(self, restriction):
         if not restriction:
-            raise ValueError('Cannot add an empty restriction to a directive')
+            raise ValueError("Cannot add an empty restriction to a directive")
 
         try:
             super().add(is_allowed_fetch_restriction(restriction))
@@ -217,7 +228,7 @@ def load_directive(string, *restrictions):
     if directive in TrustedTypesDirective._allowed:
         return TrustedTypesDirective(*restrictions)
 
-    raise ValueError(f'Unhandled directive type: {directive.value}')
+    raise ValueError(f"Unhandled directive type: {directive.value}")
 
 
 class Header:
@@ -230,7 +241,7 @@ class Header:
         raise NotImplementedError()
 
     def __str__(self):
-        return f'{self.key}: {self.value}'
+        return f"{self.key}: {self.value}"
 
 
 class ReportGroup:
@@ -250,7 +261,14 @@ class ReportGroup:
         if not endpoint:
             return
 
-        if isinstance(endpoint, (list, set, tuple,)):
+        if isinstance(
+            endpoint,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             for item in endpoint:
                 self.add_endpoint(item)
 
@@ -267,8 +285,7 @@ class ReportGroup:
 
 
 class ReportTo(Header):
-
-    key = 'Report-To'
+    key = "Report-To"
     groups = []
 
     def __init__(self, *groups):
@@ -277,13 +294,20 @@ class ReportTo(Header):
 
     @property
     def value(self):
-        return ','.join([str(group) for group in self.groups])
+        return ",".join([str(group) for group in self.groups])
 
     def add(self, group):
         if not group:
             return
 
-        if isinstance(group, (list, set, tuple,)):
+        if isinstance(
+            group,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             for item in group:
                 self.add(item)
 
@@ -291,11 +315,11 @@ class ReportTo(Header):
             self.groups.append(group)
 
         else:
-            raise ValueError('Provided report group was invalid')
+            raise ValueError("Provided report group was invalid")
 
 
 class ContentSecurityPolicy(Header):
-    key = 'Content-Security-Policy'
+    key = "Content-Security-Policy"
     directives = []
 
     def __init__(self, *directives):
@@ -304,10 +328,17 @@ class ContentSecurityPolicy(Header):
 
     @property
     def value(self):
-        return '; '.join([str(directive) for directive in self.directives])
+        return "; ".join([str(directive) for directive in self.directives])
 
     def add(self, directive):
-        if isinstance(directive, (list, set, tuple,)):
+        if isinstance(
+            directive,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             for item in directive:
                 self.add(item)
 
@@ -315,20 +346,23 @@ class ContentSecurityPolicy(Header):
             self.directives.append(directive)
 
         else:
-            raise ValueError('Provided directive was invalid')
+            raise ValueError("Provided directive was invalid")
 
 
 class ReportOnlyPolicy(ContentSecurityPolicy):
-    key = 'Content-Security-Policy-Report-Only'
+    key = "Content-Security-Policy-Report-Only"
 
     @property
     def value(self):
         report_to_exists = [
-            item for item in self.directives
+            item
+            for item in self.directives
             if item.directive in (Directive.REPORT_TO, Directive.REPORT_URI)
         ]
 
         if not report_to_exists:
-            raise ValueError('There must be a report-to directive when using a report-only policy!')
+            raise ValueError(
+                "There must be a report-to directive when using a report-only policy!"
+            )
 
         return super().value

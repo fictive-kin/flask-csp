@@ -21,7 +21,10 @@ from .policy import (
 LOG = logging.getLogger(__name__)
 
 # Options that change how the header is sent, rather than being directives within it
-NON_DIRECTIVE_OPTIONS = ['report_only', 'intercept_exceptions',]
+NON_DIRECTIVE_OPTIONS = [
+    "report_only",
+    "intercept_exceptions",
+]
 
 
 def set_csp_header(resp, options):
@@ -35,7 +38,7 @@ def set_csp_header(resp, options):
 
     # If CSP has already been evaluated via the decorator, skip
     if hasattr(resp, FLASK_CSP_EVALUATED):
-        LOG.debug('CSP has been already evaluated, skipping')
+        LOG.debug("CSP has been already evaluated, skipping")
         return resp
 
     setattr(resp, FLASK_CSP_EVALUATED, True)
@@ -43,25 +46,35 @@ def set_csp_header(resp, options):
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
     # objects (Werkzeug Headers work as well). This is a problem because
     # headers allow repeated values.
-    if (not isinstance(resp.headers, Headers)
-           and not isinstance(resp.headers, MultiDict)):
+    if not isinstance(resp.headers, Headers) and not isinstance(
+        resp.headers, MultiDict
+    ):
         resp.headers = MultiDict(resp.headers)
 
-    report_groups = get_report_groups(options.get('report_to'))
+    report_groups = get_report_groups(options.get("report_to"))
 
-    header = (ReportOnlyPolicy if options.get('report_only', False) else ContentSecurityPolicy)()
+    header = (
+        ReportOnlyPolicy if options.get("report_only", False) else ContentSecurityPolicy
+    )()
     for option, restrictions in options.items():
         if option in NON_DIRECTIVE_OPTIONS or not restrictions:
             continue
         # The report-to directive can only name a single group, which must be
         # defined in the Report-To header
-        if option == 'report_to' and report_groups:
+        if option == "report_to" and report_groups:
             restrictions = report_groups[0].name
-        if not isinstance(restrictions, (list, set, tuple, )):
+        if not isinstance(
+            restrictions,
+            (
+                list,
+                set,
+                tuple,
+            ),
+        ):
             restrictions = [restrictions]
         header.add(load_directive(option, *restrictions))
 
-    LOG.debug('Settings CSP header: %s', header.value)
+    LOG.debug("Settings CSP header: %s", header.value)
     resp.headers.add(header.key, header.value)
 
     if report_groups:
@@ -80,7 +93,14 @@ def get_report_groups(report_to):
     if not report_to:
         return []
 
-    if not isinstance(report_to, (list, set, tuple,)):
+    if not isinstance(
+        report_to,
+        (
+            list,
+            set,
+            tuple,
+        ),
+    ):
         report_to = [report_to]
 
     groups = []
@@ -89,9 +109,11 @@ def get_report_groups(report_to):
             groups.append(group)
         elif isinstance(group, dict):
             groups.append(
-                ReportGroup(group['name'],
-                            group['endpoints'],
-                            max_age=group.get('max_age', None))
+                ReportGroup(
+                    group["name"],
+                    group["endpoints"],
+                    max_age=group.get("max_age", None),
+                )
             )
 
     return groups
@@ -116,15 +138,15 @@ def get_csp_options(app, *dicts):
 def get_app_kwarg_dict(app=None):
     """Returns the dictionary of CSP specific app configurations."""
 
-    app = (app or current_app)
+    app = app or current_app
 
     # In order to support blueprints which do not have a config attribute
-    app_config = getattr(app, 'config', {})
+    app_config = getattr(app, "config", {})
 
     option_names = [k.name.lower() for k in Directive] + NON_DIRECTIVE_OPTIONS
 
     return {
-        name: app_config.get(f'CSP_{name.upper()}')
+        name: app_config.get(f"CSP_{name.upper()}")
         for name in option_names
-        if app_config.get(f'CSP_{name.upper()}') is not None
+        if app_config.get(f"CSP_{name.upper()}") is not None
     }
