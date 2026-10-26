@@ -22,15 +22,20 @@ LOG = logging.getLogger(__name__)
 class CSP:
     """
     Initializes Content Security Policies for the application. The
-    arguments are identical to :py:func:`csp`.
+    policy arguments are identical to :py:func:`csp`.
 
     The settings for CSP are determined in the following order
 
-    1. Resource level settings (e.g when passed as a dictionary)
-    2. Keyword argument settings
+    1. Keyword arguments to ``init_app`` or ``init_blueprint``
+    2. Keyword arguments to the constructor
     3. App level configuration settings (e.g. CSP_*)
     4. Default settings
 
+    :param app: The Flask app to initialize, if not calling ``init_app`` later
+    :param receiver_prefix: URL prefix to mount the CSP report receiver at.
+        No receiver is registered if this is not set.
+    :param sqlalchemy: Store received reports with SQLAlchemy instead of logging them
+    :param kwargs: CSP directives and options, see :doc:`configuration`
     """
 
     _options = {}
@@ -86,10 +91,10 @@ class CSP:
                 raise ValueError(
                     'Cannot load SqlAlchemy CSP views. SqlAlchemy is not available')
 
-            app.register_blueprint(sqlalchemy_bp, prefix=self._receiver_prefix)
+            app.register_blueprint(sqlalchemy_bp, url_prefix=self._receiver_prefix)
 
         else:
-            app.register_blueprint(simple_bp, prefix=self._receiver_prefix)
+            app.register_blueprint(simple_bp, url_prefix=self._receiver_prefix)
 
     def init_blueprint(self, blueprint, **kwargs):
         """Blueprint initialization for the extension"""

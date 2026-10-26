@@ -195,7 +195,7 @@ class SourceDirective(BaseDirective):
 
 
 def load_directive(string, *restrictions):
-    """Returns the appropriate *Directive class based on the provided data"""
+    """Returns the appropriate ``*Directive`` class based on the provided data"""
 
     if isinstance(string, BaseDirective):
         return string

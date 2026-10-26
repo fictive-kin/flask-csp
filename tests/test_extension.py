@@ -41,7 +41,7 @@ def test_receiver_route_added(request, test_app, state):
 
     receiver_route_found = False
     for rule in test_app.url_map.iter_rules():
-        if rule.rule == '/report':
+        if rule.rule == '/csp/report':
             receiver_route_found = True
             break
 

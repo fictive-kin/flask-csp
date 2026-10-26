@@ -19,6 +19,10 @@ LOG = logging.getLogger(__name__)
 def csp(*args, **kwargs):
     """
     This function is the decorator which is used to wrap a Flask route with.
+
+    It can be applied bare (``@csp``) for the default policy, or called with
+    CSP directives and options (``@csp(script_src=['self'])``), see
+    :doc:`configuration`. Options are combined with the app's CSP_* settings.
     """
 
     _options = kwargs

@@ -41,9 +41,13 @@ tests = [
 lint = [
     "pylint>=4.1",
 ]
+docs = [
+    "sphinx>=8.1",
+    "sphinx-rtd-theme>=3.0",
+]
 
 [project.urls]
-Homepage = "https://github.com/fictivekin/flask-csp"
+Homepage = "https://github.com/fictive-kin/flask-csp"
 
 [tool.setuptools.packages.find]
 include = ["flask_csp*"]

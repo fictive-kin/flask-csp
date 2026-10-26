@@ -20,7 +20,7 @@ Installation
 
 .. code:: bash
 
-    $ pip3 install git+https://github.com/fictivekin/flask-csp.git#egg=flask_csp
+    $ pip install "flask-csp @ git+https://github.com/fictive-kin/flask-csp.git"
 
 
 Global App-level extension
@@ -65,7 +65,7 @@ Blueprint-level extension
     def index():
         return "Hello, with no CSP policy set!"
 
-    app.register_blueprint(bp, prefix='/my-blueprint')
+    app.register_blueprint(bp, url_prefix='/my-blueprint')
 
 
 As a decorator
