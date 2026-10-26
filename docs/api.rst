@@ -61,6 +61,58 @@ that accepts ``application/csp-report`` submissions and writes each one to the
 Without ``receiver_prefix``, no endpoint is registered and you will need to collect reports
 yourself.
 
+Storing reports with SQLAlchemy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Reports can be saved to a database instead of logged. This needs SQLAlchemy 2.0 or later, which
+the ``full`` extra installs:
+
+.. code:: bash
+
+    $ pip install "flask-csp[full] @ git+https://github.com/fictive-kin/flask-csp.git"
+
+Pass an SQLAlchemy ``Engine``, or anything that returns a ``Session`` when called (such as a
+``sessionmaker``), as the ``sqlalchemy`` argument. Reports are saved to a ``csp_reports`` table,
+which you need to create, for example with ``Base.metadata.create_all`` or a migration:
+
+.. code:: python
+
+    from flask import Flask
+    from flask_csp import CSP
+    from flask_csp.sqlalchemy.models import Base
+    from sqlalchemy import create_engine
+
+    engine = create_engine('postgresql://localhost/example')
+    Base.metadata.create_all(engine)
+
+    app = Flask(__name__)
+    CSP(app, receiver_prefix='/csp', report_uri='/csp/report', sqlalchemy=engine)
+
+With `Flask-SQLAlchemy <https://flask-sqlalchemy.readthedocs.io/>`__, pass ``db.session``:
+
+.. code:: python
+
+    db = SQLAlchemy(app)
+    CSP(app, receiver_prefix='/csp', report_uri='/csp/report', sqlalchemy=db.session)
+
+    with app.app_context():
+        Base.metadata.create_all(db.engine)
+
+``db.create_all()`` does not create the ``csp_reports`` table, since it uses its own metadata.
+
+Reports can be browsed at ``<receiver_prefix>/reports/review``. A ``POST`` to the same URL
+filters them by any of these form fields:
+
+* ``before`` / ``after``: ISO 8601 timestamps
+* ``disposition``: ``enforce`` or ``report``
+* ``document-uri``, ``blocked-uri``, ``referrer``: matches any report containing the value
+
+.. warning::
+
+   The review page has no access control, and reports can include URLs and referrers from your
+   users' sessions. Protect it, for example with a ``before_request`` handler on the app, before
+   exposing it publicly.
+
 Policy objects
 ~~~~~~~~~~~~~~
 

@@ -128,6 +128,10 @@ Other options
    The URL prefix to mount the built-in report receiver at. See :ref:`receiving reports
    <receiving-reports>`.
 
+``sqlalchemy`` (``Engine`` or session factory, extension only)
+   Save received reports to a database instead of logging them. Requires ``flask-csp[full]``.
+   See :ref:`receiving reports <receiving-reports>`.
+
 .. _csp_default_values:
 
 Default values

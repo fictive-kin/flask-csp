@@ -22,6 +22,12 @@ Installation
 
     $ pip install "flask-csp @ git+https://github.com/fictive-kin/flask-csp.git"
 
+To store CSP violation reports in a database with SQLAlchemy, install the ``full`` extra instead:
+
+.. code:: bash
+
+    $ pip install "flask-csp[full] @ git+https://github.com/fictive-kin/flask-csp.git"
+
 
 Global App-level extension
 --------------------------
