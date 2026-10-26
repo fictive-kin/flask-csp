@@ -17,7 +17,7 @@ from .policy import ReportGroup, ReportTo, ContentSecurityPolicy, ReportOnlyPoli
 LOG = logging.getLogger(__name__)
 
 # Options that change how the header is sent, rather than being directives within it
-NON_DIRECTIVE_OPTIONS = ['report_only',]
+NON_DIRECTIVE_OPTIONS = ['report_only', 'intercept_exceptions',]
 
 
 def set_csp_header(resp, options):
