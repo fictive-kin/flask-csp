@@ -8,7 +8,6 @@ import pytest
 
 sqlalchemy = pytest.importorskip('sqlalchemy')
 
-# pylint: disable=wrong-import-position
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool

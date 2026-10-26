@@ -2,10 +2,10 @@
 flask_csp.sqlalchemy.views
 """
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
-from flask import abort, current_app, request, make_response, render_template, Blueprint
+from flask import Blueprint, abort, current_app, make_response, render_template, request
 from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import sessionmaker
@@ -18,7 +18,6 @@ except ImportError:
 
 from ..utils import get_submitted_report
 from .models import CspReport
-
 
 LOG = logging.getLogger('flask_csp.receiver')
 CSP_BP = Blueprint('csp', __name__, template_folder='../templates')
@@ -85,11 +84,11 @@ def receiver():
             violated_directive=csp_report.get('violated-directive'),
         )
 
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception as exc:
         if SENTRY:
             capture_exception(exc)
 
-        LOG.exception(exc)
+        LOG.exception('Could not parse CSP report')
         return abort(400)
 
     try:
@@ -97,11 +96,11 @@ def receiver():
             session.add(report)
             session.commit()
 
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception as exc:
         if SENTRY:
             capture_exception(exc)
 
-        LOG.exception(exc)
+        LOG.exception('Could not save CSP report')
         return abort(422)
 
     return make_response('', 204)

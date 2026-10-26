@@ -4,24 +4,29 @@ tests.test_policy
 
 import pytest
 
-from flask import url_for
-
 from flask_csp.constants import (
-    Directive, FetchRestriction, SandboxRestriction, TrustedTypesRestriction
+    Directive,
+    FetchRestriction,
+    SandboxRestriction,
+    TrustedTypesRestriction,
 )
 from flask_csp.policy import (
-    is_allowed_directive, is_allowed_fetch_restriction, is_allowed_sandbox_restriction, is_allowed_trustedtype_restriction, load_directive,
     BaseDirective,
-    SourceDirective,
-    SimpleDirective,
+    ContentSecurityPolicy,
     EmptyDirective,
-    SandboxDirective,
-    TrustedTypesDirective,
     Header,
     ReportGroup,
-    ReportTo,
-    ContentSecurityPolicy,
     ReportOnlyPolicy,
+    ReportTo,
+    SandboxDirective,
+    SimpleDirective,
+    SourceDirective,
+    TrustedTypesDirective,
+    is_allowed_directive,
+    is_allowed_fetch_restriction,
+    is_allowed_sandbox_restriction,
+    is_allowed_trustedtype_restriction,
+    load_directive,
 )
 
 

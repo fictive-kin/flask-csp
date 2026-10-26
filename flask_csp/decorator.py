@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 flask_csp.decorator
 ~~~~
@@ -8,10 +7,9 @@ A decorator to protect a single Flask route with CSP
 import functools
 import logging
 
-from flask import make_response, current_app
+from flask import current_app, make_response
 
 from .core import get_csp_options, set_csp_header
-
 
 LOG = logging.getLogger(__name__)
 
@@ -27,7 +25,7 @@ def csp(*args, **kwargs):
 
     _options = kwargs
 
-    def wrapper(f):  # pylint: disable=invalid-name
+    def wrapper(f):
         LOG.debug("Enabling %s for csp using options: %s", f, _options)
 
         @functools.wraps(f)

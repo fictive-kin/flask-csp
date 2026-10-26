@@ -4,8 +4,6 @@ tests.test_extension
 
 import pytest
 
-from flask import url_for
-
 from flask_csp import CSP
 
 
@@ -20,7 +18,7 @@ def test_after_request_added(request, test_app, state):
     test_app = request.getfixturevalue(test_app)
 
     after_request_found = False
-    for k,v in test_app.after_request_funcs.items():
+    for v in test_app.after_request_funcs.values():
         for i in v:
             if i.__qualname__ == 'CSP.after_request':
                 after_request_found = True
@@ -109,12 +107,11 @@ def test_extension_csp_header(request, test_app, route, csp_state, csp_report_st
 
     test_app = request.getfixturevalue(test_app)
 
-    with test_app.app_context():
-        with test_app.test_client() as c:
-            rv = c.get(route)
-            assert rv.status_code == 200
-            assert rv.headers.get('Content-Security-Policy') == csp_state
-            assert rv.headers.get('Content-Security-Policy-Report-Only') == csp_report_state
+    with test_app.app_context(), test_app.test_client() as c:
+        rv = c.get(route)
+        assert rv.status_code == 200
+        assert rv.headers.get('Content-Security-Policy') == csp_state
+        assert rv.headers.get('Content-Security-Policy-Report-Only') == csp_report_state
 
 
 @pytest.mark.parametrize('report_to, csp_state, report_to_state', [
@@ -134,8 +131,10 @@ def test_extension_csp_header(request, test_app, route, csp_state, csp_report_st
             {'name': 'other-endpoint', 'endpoints': ['https://example.com/other/receiver']},
         ],
         "default-src 'self'; report-to csp-endpoint",
-        '{"endpoints": [{"url": "https://example.com/csp/receiver"}], "group": "csp-endpoint", "max_age": 60},'
-        '{"endpoints": [{"url": "https://example.com/other/receiver"}], "group": "other-endpoint", "max_age": 3600}',
+        (
+            '{"endpoints": [{"url": "https://example.com/csp/receiver"}], "group": "csp-endpoint", "max_age": 60},'
+            '{"endpoints": [{"url": "https://example.com/other/receiver"}], "group": "other-endpoint", "max_age": 3600}'
+        ),
     ),
 ])
 def test_extension_report_to(base_app, report_to, csp_state, report_to_state):

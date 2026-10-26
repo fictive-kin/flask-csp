@@ -8,11 +8,11 @@ from sqlalchemy import func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class Base(DeclarativeBase):  # pylint: disable=too-few-public-methods
+class Base(DeclarativeBase):
     """Declarative base for the Flask-CSP models"""
 
 
-class CspReport(Base):  # pylint: disable=too-few-public-methods
+class CspReport(Base):
     """
 
     Example CSP report:

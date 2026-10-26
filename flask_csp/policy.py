@@ -3,12 +3,16 @@
 policy
 
 """
-# pylint: disable=missing-function-docstring,too-few-public-methods,missing-class-docstring
 
 import json
 from enum import Enum
 
-from .constants import Directive, FetchRestriction, SandboxRestriction, TrustedTypesRestriction
+from .constants import (
+    Directive,
+    FetchRestriction,
+    SandboxRestriction,
+    TrustedTypesRestriction,
+)
 
 
 def is_allowed_enum_value(type_, item, allowed=None):
@@ -20,7 +24,7 @@ def is_allowed_enum_value(type_, item, allowed=None):
             raise ValueError(f'Not a valid {type_.__name__}: {item}') from exc
 
     if allowed and item not in allowed:
-        raise ValueError(f'{item.value} is not accepted. Can only be one of {str(allowed)}')
+        raise ValueError(f'{item.value} is not accepted. Can only be one of {allowed!s}')
 
     return item
 
@@ -170,7 +174,6 @@ class SourceDirective(BaseDirective):
     SourceDirectives are single command directives with multiple values allowing freeform values
     """
 
-    # pylint: disable=protected-access
     _allowed = [
         item
         for item in Directive
@@ -199,19 +202,19 @@ def load_directive(string, *restrictions):
 
     directive = is_allowed_directive(string)
 
-    if directive in SourceDirective._allowed:  # pylint: disable=protected-access
+    if directive in SourceDirective._allowed:
         return SourceDirective(directive, *restrictions)
 
-    if directive in SimpleDirective._allowed:  # pylint: disable=protected-access
+    if directive in SimpleDirective._allowed:
         return SimpleDirective(directive, *restrictions)
 
-    if directive in EmptyDirective._allowed:  # pylint: disable=protected-access
+    if directive in EmptyDirective._allowed:
         return EmptyDirective(directive)
 
-    if directive in SandboxDirective._allowed:  # pylint: disable=protected-access
+    if directive in SandboxDirective._allowed:
         return SandboxDirective(*restrictions)
 
-    if directive in TrustedTypesDirective._allowed:  # pylint: disable=protected-access
+    if directive in TrustedTypesDirective._allowed:
         return TrustedTypesDirective(*restrictions)
 
     raise ValueError(f'Unhandled directive type: {directive.value}')

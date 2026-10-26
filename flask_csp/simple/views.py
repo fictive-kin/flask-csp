@@ -4,10 +4,9 @@ flask_csp.simple.views
 
 import logging
 
-from flask import abort, make_response, Blueprint
+from flask import Blueprint, abort, make_response
 
 from ..utils import get_submitted_report
-
 
 LOG = logging.getLogger('flask_csp.receiver')
 CSP_BP = Blueprint('csp', __name__)

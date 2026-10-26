@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 flask_csp.core
 ~~~~
@@ -10,9 +9,14 @@ import logging
 from flask import current_app
 from werkzeug.datastructures import Headers, MultiDict
 
-from .constants import Directive, FLASK_CSP_EVALUATED, DEFAULT_OPTIONS
-from .policy import ReportGroup, ReportTo, ContentSecurityPolicy, ReportOnlyPolicy, load_directive
-
+from .constants import DEFAULT_OPTIONS, FLASK_CSP_EVALUATED, Directive
+from .policy import (
+    ContentSecurityPolicy,
+    ReportGroup,
+    ReportOnlyPolicy,
+    ReportTo,
+    load_directive,
+)
 
 LOG = logging.getLogger(__name__)
 

@@ -2,7 +2,6 @@
 tests.test_blueprint_extension
 """
 
-import pytest
 
 from flask import Blueprint, url_for
 
@@ -40,24 +39,23 @@ def full(app):
 def test_blueprint(base_app):
     """Ensure that the simple CSP extension adds the after request processor only to the blueprint's routes"""
 
-    report_bp = report(base_app)
-    full_bp = full(base_app)
+    report(base_app)
+    full(base_app)
 
     csp_header = "default-src 'self'; report-uri https://example.com/csp/receiver"
 
-    with base_app.app_context():
-        with base_app.test_client() as c:
-            rv = c.get(url_for('report-only.report_only'))  # '/report-only-bp/test')
-            assert rv.status_code == 200
-            assert rv.headers.get('Content-Security-Policy') == None
-            assert rv.headers.get('Content-Security-Policy-Report-Only') == csp_header
+    with base_app.app_context(), base_app.test_client() as c:
+        rv = c.get(url_for('report-only.report_only'))  # '/report-only-bp/test')
+        assert rv.status_code == 200
+        assert rv.headers.get('Content-Security-Policy') == None
+        assert rv.headers.get('Content-Security-Policy-Report-Only') == csp_header
 
-            rv = c.get(url_for('full-csp.full'))  # '/full-bp/test')
-            assert rv.status_code == 200
-            assert rv.headers.get('Content-Security-Policy') == csp_header
-            assert rv.headers.get('Content-Security-Policy-Report-Only') == None
+        rv = c.get(url_for('full-csp.full'))  # '/full-bp/test')
+        assert rv.status_code == 200
+        assert rv.headers.get('Content-Security-Policy') == csp_header
+        assert rv.headers.get('Content-Security-Policy-Report-Only') == None
 
-            rv = c.get('/undecorated')
-            assert rv.status_code == 200
-            assert rv.headers.get('Content-Security-Policy') == None
-            assert rv.headers.get('Content-Security-Policy-Report-Only') == None
+        rv = c.get('/undecorated')
+        assert rv.status_code == 200
+        assert rv.headers.get('Content-Security-Policy') == None
+        assert rv.headers.get('Content-Security-Policy-Report-Only') == None

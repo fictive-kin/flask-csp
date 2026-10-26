@@ -7,7 +7,6 @@ import logging
 
 from flask import abort, request
 
-
 LOG = logging.getLogger('flask_csp.receiver')
 
 

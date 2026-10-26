@@ -4,16 +4,19 @@ flask_csp.extension
 
 import logging
 
-from flask import Flask, Blueprint
+from flask import Blueprint, Flask
 
 from .core import get_csp_options, set_csp_header
-
 from .simple.views import CSP_BP as simple_bp
 
 try:
     from .sqlalchemy.views import (
         CSP_BP as sqlalchemy_bp,
+    )
+    from .sqlalchemy.views import (
         EXTENSION_KEY as SQLALCHEMY_EXTENSION_KEY,
+    )
+    from .sqlalchemy.views import (
         get_session_factory,
     )
     SQLALCHEMY = True
@@ -76,7 +79,7 @@ class CSP:
 
         # These error handlers will still respect the behavior of the route
         if self._options.get('intercept_exceptions', True):
-            def _after_request_decorator(f):  # pylint: disable=invalid-name
+            def _after_request_decorator(f):
                 def wrapped_function(*args, **kwargs):
                     return self.after_request(app.make_response(f(*args, **kwargs)))
                 return wrapped_function

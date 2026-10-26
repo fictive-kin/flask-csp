@@ -4,7 +4,8 @@
 
 import os
 import sys
-from importlib.metadata import PackageNotFoundError, version as get_version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as get_version
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -12,7 +13,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = 'Flask-CSP'
 author = 'Fictive Kin LLC'
-copyright = f'%Y, {author}'  # pylint: disable=redefined-builtin
+copyright = f'%Y, {author}'
 
 try:
     release = get_version('flask-csp')

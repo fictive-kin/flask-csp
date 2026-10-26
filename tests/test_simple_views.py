@@ -3,11 +3,9 @@ tests.test_simple_views
 """
 
 import pytest
-
 from flask import url_for
 
-
-csp_content_type = {  # pylint: disable=invalid-name
+csp_content_type = {
     'Content-Type': 'application/csp-report',
 }
 
@@ -26,20 +24,18 @@ def test_simple_submission(request, receiver_app, headers, csp_report, status_co
     if isinstance(csp_report, str):
         csp_report = request.getfixturevalue(csp_report)
 
-    with receiver_app.app_context():
-        with receiver_app.test_client() as c:
-            rv = c.post(
-                url_for('csp.receiver'),
-                json=csp_report,
-                headers=headers,
-            )
-            assert rv.status_code == status_code
+    with receiver_app.app_context(), receiver_app.test_client() as c:
+        rv = c.post(
+            url_for('csp.receiver'),
+            json=csp_report,
+            headers=headers,
+        )
+        assert rv.status_code == status_code
 
 
 def test_simple_review(receiver_app):
     """Ensure that the simple CSP report review does not work"""
 
-    with receiver_app.app_context():
-        with receiver_app.test_client() as c:
-            rv = c.get(url_for('csp.review'))
-            assert rv.status_code == 404
+    with receiver_app.app_context(), receiver_app.test_client() as c:
+        rv = c.get(url_for('csp.review'))
+        assert rv.status_code == 404

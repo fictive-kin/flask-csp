@@ -4,8 +4,8 @@ tests.conftest
 
 import os
 
+import pytest
 from flask import Flask
-import pytest  # pylint: disable=import-error
 
 from flask_csp import CSP, csp
 from flask_csp.constants import FetchRestriction

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 flask_csp
 ~~~~
@@ -8,3 +7,5 @@ Content Security Policies (CSP) using a simple decorator.
 
 from .decorator import csp
 from .extension import CSP
+
+__all__ = ["CSP", "csp"]
