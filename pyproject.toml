@@ -33,7 +33,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+full = [
+    "SQLAlchemy>=2.0",
+]
 tests = [
+    "flask-csp[full]",
     "pytest>=9.1",
     "pytest-cov>=7.1",
     "pytest-randomly>=5.0",

@@ -11,7 +11,11 @@ from .core import get_csp_options, set_csp_header
 from .simple.views import CSP_BP as simple_bp
 
 try:
-    from .sqlalchemy.views import CSP_BP as sqlalchemy_bp
+    from .sqlalchemy.views import (
+        CSP_BP as sqlalchemy_bp,
+        EXTENSION_KEY as SQLALCHEMY_EXTENSION_KEY,
+        get_session_factory,
+    )
     SQLALCHEMY = True
 except ImportError:
     SQLALCHEMY = False
@@ -34,7 +38,9 @@ class CSP:
     :param app: The Flask app to initialize, if not calling ``init_app`` later
     :param receiver_prefix: URL prefix to mount the CSP report receiver at.
         No receiver is registered if this is not set.
-    :param sqlalchemy: Store received reports with SQLAlchemy instead of logging them
+    :param sqlalchemy: An SQLAlchemy ``Engine``, or a callable returning a
+        ``Session``, to store received reports in the database instead of
+        logging them. Requires ``flask-csp[full]``.
     :param kwargs: CSP directives and options, see :doc:`configuration`
     """
 
@@ -89,8 +95,9 @@ class CSP:
         if self._sqlalchemy:
             if not SQLALCHEMY:
                 raise ValueError(
-                    'Cannot load SqlAlchemy CSP views. SqlAlchemy is not available')
+                    'Cannot load SQLAlchemy CSP views. Install flask-csp[full] to use them')
 
+            app.extensions[SQLALCHEMY_EXTENSION_KEY] = get_session_factory(self._sqlalchemy)
             app.register_blueprint(sqlalchemy_bp, url_prefix=self._receiver_prefix)
 
         else:

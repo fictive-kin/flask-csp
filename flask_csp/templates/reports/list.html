@@ -24,7 +24,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for report in reports: %}
+                {% for report in reports %}
                     <tr class="{{ loop.cycle('odd', 'even') }}">
                         <td>{{ report.disposition }}</td>
                         <td>{{ report.document_uri }}</td>
@@ -34,7 +34,7 @@
                         <td>{{ report.referrer }}</td>
                     </tr>
                 {% endfor %}
-            <tbody>
+            </tbody>
         </table>
     </body>
 </html>

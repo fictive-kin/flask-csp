@@ -1,13 +1,17 @@
 """
-flask_csp.views.sqlalchemy
+flask_csp.sqlalchemy.views
 """
 
+from datetime import datetime
 import logging
 
-from flask import abort, request, make_response, render_template, Blueprint
+from flask import abort, current_app, request, make_response, render_template, Blueprint
+from sqlalchemy import select
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker
 
 try:
-    from sentry import capture_exception
+    from sentry_sdk import capture_exception
     SENTRY = True
 except ImportError:
     SENTRY = False
@@ -17,16 +21,35 @@ from .models import CspReport
 
 
 LOG = logging.getLogger('flask_csp.receiver')
-CSP_BP = Blueprint('csp', __name__)
+CSP_BP = Blueprint('csp', __name__, template_folder='../templates')
 
-# This will need to be set by the app's db variable in order to actually work
-DB = None
+# Key in app.extensions holding the session factory used by these views
+EXTENSION_KEY = 'flask_csp.sqlalchemy'
+
+
+def get_session_factory(engine_or_factory):
+    """
+    Returns a callable that creates sessions, from either an Engine or an
+    existing session factory such as a sessionmaker or scoped_session
+    """
+
+    if isinstance(engine_or_factory, Engine):
+        return sessionmaker(bind=engine_or_factory)
+
+    if not callable(engine_or_factory):
+        raise ValueError('sqlalchemy must be an Engine or a callable that returns a Session')
+
+    return engine_or_factory
+
+
+def _get_session():
+    return current_app.extensions[EXTENSION_KEY]()
 
 
 @CSP_BP.route('/report', methods=['POST'])
 def receiver():
     """
-    A simple receiver that outputs CSP reports to the log
+    A receiver that saves CSP reports to the database
 
     Example CSP report:
 
@@ -49,6 +72,7 @@ def receiver():
     # These 2 try blocks are separate to enable returning a 400 or 422 depending on
     # if the provided data was broken or there was an error saving the report to the db
     try:
+        status_code = csp_report.get('status-code')
         report = CspReport(
             blocked_uri=csp_report['blocked-uri'],
             disposition=csp_report['disposition'],
@@ -57,7 +81,7 @@ def receiver():
             original_policy=csp_report['original-policy'],
             referrer=csp_report.get('referrer'),
             script_sample=csp_report.get('script-sample'),
-            status_code=int(csp_report.get('status-code')),
+            status_code=int(status_code) if status_code is not None else None,
             violated_directive=csp_report.get('violated-directive'),
         )
 
@@ -69,8 +93,9 @@ def receiver():
         return abort(400)
 
     try:
-        with DB.session.begin():
-            DB.session.add(report)
+        with _get_session() as session:
+            session.add(report)
+            session.commit()
 
     except Exception as exc:  # pylint: disable=broad-except
         if SENTRY:
@@ -88,17 +113,23 @@ def review():
     Lists and allows searching of saved CSP reports
     """
 
+    filters = []
     if request.method == 'POST':
-        filters = []
         for filter_, value in request.values.items():
             if not value:
                 continue
 
+            if filter_ in ('before', 'after'):
+                try:
+                    value = datetime.fromisoformat(value)
+                except ValueError:
+                    return abort(400)
+
             if filter_ == 'before':
-                filters.append(CspReport.ts.lte(value))
+                filters.append(CspReport.ts <= value)
 
             elif filter_ == 'after':
-                filters.append(CspReport.ts.gte(value))
+                filters.append(CspReport.ts >= value)
 
             elif filter_ == 'disposition':
                 filters.append(CspReport.disposition == value)
@@ -114,6 +145,9 @@ def review():
 
             # else: not a parameter that we care about
 
-    reports = CspReport.query.order_by(CspReport.id.desc()).all()
+    with _get_session() as session:
+        reports = session.scalars(
+            select(CspReport).where(*filters).order_by(CspReport.id.desc())
+        ).all()
 
-    return render_template('reports/list.html', reports=reports)
+        return render_template('reports/list.html', reports=reports)

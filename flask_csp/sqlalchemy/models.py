@@ -2,10 +2,17 @@
 flask_csp.sqlalchemy.models
 """
 
-from sqlalchemy import db, func  # pylint: disable=import-error
+from datetime import datetime
+
+from sqlalchemy import func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class CspReport(db.Model):  # pylint: disable=too-few-public-methods
+class Base(DeclarativeBase):  # pylint: disable=too-few-public-methods
+    """Declarative base for the Flask-CSP models"""
+
+
+class CspReport(Base):  # pylint: disable=too-few-public-methods
     """
 
     Example CSP report:
@@ -30,15 +37,15 @@ class CspReport(db.Model):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "csp_reports"
 
-    id = db.Column(db.Integer, primary_key=True)
-    ts = db.Column(db.DateTime, default=func.now(), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ts: Mapped[datetime] = mapped_column(default=func.now())
 
-    blocked_uri = db.Column(db.String, nullable=False)
-    disposition = db.Column(db.String, nullable=False)
-    document_uri = db.Column(db.String, nullable=False)
-    effective_directive = db.Column(db.String)
-    original_policy = db.Column(db.String, nullable=False)
-    referrer = db.Column(db.String)
-    script_sample = db.Column(db.String)
-    status_code = db.Column(db.Integer)
-    violated_directive = db.Column(db.String)
+    blocked_uri: Mapped[str]
+    disposition: Mapped[str]
+    document_uri: Mapped[str]
+    effective_directive: Mapped[str | None]
+    original_policy: Mapped[str]
+    referrer: Mapped[str | None]
+    script_sample: Mapped[str | None]
+    status_code: Mapped[int | None]
+    violated_directive: Mapped[str | None]
