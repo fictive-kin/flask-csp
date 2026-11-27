@@ -16,6 +16,8 @@ is used:
      app's ``CSP_*`` settings.
    * The decorator only combines its own arguments with the app's ``CSP_*`` settings; it does not
      inherit arguments passed to the extension.
+   * The :py:func:`~flask_csp.standalone_csp` decorator uses only its own arguments: no app
+     settings and no defaults.
    * When more than one policy covers a view, only one header is sent: the decorator wins over a
      blueprint policy, which wins over the app-wide policy.
 
@@ -53,7 +55,8 @@ included as given.
 Some directives take restricted values:
 
 ``sandbox``
-   Members of :py:class:`flask_csp.constants.SandboxRestriction`, e.g. ``allow-scripts``.
+   Members of :py:class:`flask_csp.constants.SandboxRestriction`, e.g. ``allow-scripts``, or
+   ``True`` for a bare ``sandbox`` that applies every restriction.
 
 ``trusted_types``
    Policy names, ``'none'`` or ``'allow-duplicates'``.

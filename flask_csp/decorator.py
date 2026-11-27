@@ -1,7 +1,7 @@
 """
 flask_csp.decorator
 ~~~~
-A decorator to protect a single Flask route with CSP
+Decorators to protect a single Flask route with CSP
 """
 
 import functools
@@ -12,6 +12,17 @@ from flask import current_app, make_response
 from .core import get_csp_options, set_csp_header
 
 LOG = logging.getLogger(__name__)
+
+
+def _decorate(f, get_options):
+    """Wrap ``f`` so that its response gets the policy ``get_options()`` returns."""
+
+    @functools.wraps(f)
+    def decorated(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        return set_csp_header(resp, get_options())
+
+    return decorated
 
 
 def csp(*args, **kwargs):
@@ -27,17 +38,7 @@ def csp(*args, **kwargs):
 
     def wrapper(f):
         LOG.debug("Enabling %s for csp using options: %s", f, _options)
-
-        @functools.wraps(f)
-        def decorated(*args, **kwargs):
-            # Handle setting of Flask-CSP parameters
-            options = get_csp_options(current_app, _options)
-
-            resp = make_response(f(*args, **kwargs))
-
-            return set_csp_header(resp, options)
-
-        return decorated
+        return _decorate(f, lambda: get_csp_options(current_app, _options))
 
     try:
         if callable(args[0]):
@@ -45,5 +46,29 @@ def csp(*args, **kwargs):
 
     except IndexError:
         pass
+
+    return wrapper
+
+
+def standalone_csp(**kwargs):
+    """
+    Wrap a view, or any function returning a response, with a policy made only
+    from the given CSP directives and options (see :doc:`configuration`).
+
+    Unlike :py:func:`csp`, the app's ``CSP_*`` settings and the default
+    ``default_src`` are not applied, so the header holds exactly the directives
+    given, in the order given. Use it where the app-wide policy doesn't fit at
+    all, such as for sandboxed, user-supplied content. As with :py:func:`csp`,
+    the response doesn't also get the extension's policy.
+    """
+
+    if not kwargs:
+        raise TypeError("standalone_csp needs at least one directive")
+
+    _options = dict(kwargs)
+
+    def wrapper(f):
+        LOG.debug("Enabling %s for standalone csp using options: %s", f, _options)
+        return _decorate(f, lambda: _options)
 
     return wrapper

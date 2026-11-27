@@ -21,6 +21,30 @@ the same options as the extension and can be used with or without arguments.
 
 .. autofunction:: flask_csp.csp
 
+The ``csp`` decorator builds on the app's ``CSP_*`` settings. When a view's policy should have
+nothing to do with the rest of the app, such as for sandboxed user content, use ``standalone_csp``
+instead: its header holds only the directives you give it. It can also wrap a helper that a view
+calls, which lets a view pick a policy per response:
+
+.. code:: python
+
+    from flask import Response
+    from flask_csp import standalone_csp
+
+    @standalone_csp(sandbox=True, default_src='none')
+    def plain_text(data):
+        return Response(data, mimetype='text/plain')
+
+    @app.route('/raw/<name>')
+    def raw(name):
+        return plain_text(load(name))
+
+produces::
+
+    Content-Security-Policy: sandbox; default-src 'none'
+
+.. autofunction:: flask_csp.standalone_csp
+
 Report-only policies
 ~~~~~~~~~~~~~~~~~~~~
 

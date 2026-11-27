@@ -73,7 +73,7 @@ class BaseDirective:
             else:
                 restrictions.append(str(restriction))
 
-        return f"{self.directive.value} {' '.join(restrictions)}"
+        return " ".join([self.directive.value, *restrictions])
 
     def add(self, restriction):
         if not restriction:

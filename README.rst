@@ -94,6 +94,19 @@ As a decorator
     def report_only():
         return "This will have the Content-Security-Policy-Report-Only header"
 
+``csp`` adds its arguments to the app's ``CSP_*`` settings. ``standalone_csp`` ignores them and
+sends only the directives it is given, for views whose policy has nothing in common with the rest
+of the app:
+
+.. code:: python
+
+    from flask_csp import standalone_csp
+
+    @app.route("/raw")
+    @standalone_csp(sandbox=True, default_src="none")
+    def raw():
+        return "Content-Security-Policy: sandbox; default-src 'none'"
+
 
 Mixed use of extension and decorator
 ------------------------------------

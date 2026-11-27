@@ -63,6 +63,9 @@ def set_csp_header(resp, options):
         # defined in the Report-To header
         if option == "report_to" and report_groups:
             restrictions = report_groups[0].name
+        # A bare sandbox directive (every restriction applied) has no values
+        if option == "sandbox" and restrictions is True:
+            restrictions = []
         if not isinstance(
             restrictions,
             (
