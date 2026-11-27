@@ -6,7 +6,7 @@ Core functionality shared between the extension and the decorator.
 
 import logging
 
-from flask import current_app
+from flask import current_app, request
 from werkzeug.datastructures import Headers, MultiDict
 
 from .constants import DEFAULT_OPTIONS, FLASK_CSP_EVALUATED, Directive
@@ -26,6 +26,79 @@ NON_DIRECTIVE_OPTIONS = [
     "intercept_exceptions",
 ]
 
+# Where the extension records itself on an app (in ``app.extensions``) or
+# blueprint (as an attribute), so ``apply_csp`` can find its policy
+EXTENSION_KEY = "csp"
+
+
+class Deferred:
+    """
+    An option value worked out for each response: ``func`` is called with the
+    value the option would otherwise have had (``None`` if none).
+    """
+
+    def __init__(self, func, previous=None):
+        self.func = func
+        self.previous = previous
+
+    def resolve(self):
+        return self.func(resolve(self.previous))
+
+    def __repr__(self):
+        return f"Deferred({self.func!r}, {self.previous!r})"
+
+
+def resolve(value):
+    """The value an option has for the current response."""
+    return value.resolve() if isinstance(value, Deferred) else value
+
+
+def merge_options(base, *dicts):
+    """
+    Combine option dictionaries into a copy of ``base``, the last specified
+    option winning. Callable values become :py:class:`Deferred`, so they can
+    build on the value they replace when a response is made.
+    """
+
+    options = dict(base)
+    for dict_ in dicts:
+        for option, value in (dict_ or {}).items():
+            previous = options.get(option)
+            if isinstance(previous, Deferred) and previous.func is value:
+                # The same option given again (CSP(app, ...) passes its
+                # arguments to init_app too), not a second layer on top.
+                continue
+            if callable(value) and not isinstance(value, Deferred):
+                value = Deferred(value, previous)
+            options[option] = value
+    return options
+
+
+def apply_csp(resp):
+    """
+    Add the policy that covers ``resp`` to it now, rather than when the
+    request ends: the blueprint's policy, if one was set up with
+    :py:meth:`CSP.init_blueprint <flask_csp.CSP.init_blueprint>`, otherwise
+    the app's. A response that has had its policy already, such as from a
+    decorator, is left alone, as is one that no policy covers.
+
+    Use it in an ``after_request`` function, or a view, that needs to read or
+    change a response's policy. Must be called within a request.
+    """
+
+    if hasattr(resp, FLASK_CSP_EVALUATED):
+        return resp
+
+    for name in request.blueprints:
+        blueprint = current_app.blueprints.get(name)
+        if extension := getattr(blueprint, f"_flask_{EXTENSION_KEY}", None):
+            return extension.after_request(resp)
+
+    if extension := current_app.extensions.get(EXTENSION_KEY):
+        return extension.after_request(resp)
+
+    return resp
+
 
 def set_csp_header(resp, options):
     """
@@ -42,6 +115,8 @@ def set_csp_header(resp, options):
         return resp
 
     setattr(resp, FLASK_CSP_EVALUATED, True)
+
+    options = {option: resolve(value) for option, value in options.items()}
 
     # Some libraries, like OAuthlib, set resp.headers to non Multidict
     # objects (Werkzeug Headers work as well). This is a problem because
@@ -129,13 +204,7 @@ def get_csp_options(app, *dicts):
     last specified option wins.
     """
 
-    options = DEFAULT_OPTIONS.copy()
-    options.update(get_app_kwarg_dict(app))
-    if dicts:
-        for dict_ in dicts:
-            options.update(dict_)
-
-    return options
+    return merge_options(DEFAULT_OPTIONS, get_app_kwarg_dict(app), *dicts)
 
 
 def get_app_kwarg_dict(app=None):

@@ -45,6 +45,50 @@ produces::
 
 .. autofunction:: flask_csp.standalone_csp
 
+Applying the policy early
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The extension adds its header in an ``after_request`` function, and Flask runs those in the
+reverse of the order they were registered, so ones registered after the extension see responses
+without their policy. Such a function can call ``apply_csp`` to add it there and then, for example
+to read the policy and send it some other way. The header isn't added again later.
+
+.. code:: python
+
+    from flask_csp import CSP, apply_csp
+
+    CSP(app)
+
+    @app.after_request
+    def log_policy(response):
+        response = apply_csp(response)
+        app.logger.debug(response.headers.get('Content-Security-Policy'))
+        return response
+
+.. autofunction:: flask_csp.apply_csp
+
+Policies in ``<meta>`` tags
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A page served without its headers, such as a copy saved to a file store, can carry its policy in a
+``<meta http-equiv="Content-Security-Policy">`` tag instead. Browsers ignore some directives
+there (``sandbox``, ``frame-ancestors``, ``report-uri`` and ``report-to``), so ``meta_policy`` and
+``meta_tag`` leave them out. As ``'self'`` would then mean wherever the page is served from, they
+can put the original origin in its place:
+
+.. code:: python
+
+    >>> from flask_csp import meta_tag
+    >>> meta_tag("sandbox; script-src 'self'", self_origin='https://example.com')
+    Markup('<meta http-equiv="Content-Security-Policy" content="script-src https://example.com">')
+
+Put the tag as early in ``<head>`` as possible, as it only applies to what follows it. A
+``<base>`` tag that the policy's ``base-uri`` would block must come before it.
+
+.. autofunction:: flask_csp.meta_policy
+
+.. autofunction:: flask_csp.meta_tag
+
 Report-only policies
 ~~~~~~~~~~~~~~~~~~~~
 

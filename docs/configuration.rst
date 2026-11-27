@@ -52,6 +52,26 @@ colon. They can also be passed as members of :py:class:`flask_csp.constants.Fetc
 Anything else (hosts, wildcard hosts, URLs, ``'nonce-...'`` and ``'sha256-...'`` sources) is
 included as given.
 
+Values worked out per response
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An option's value can also be a callable, which is called each time a response gets the policy,
+within the request. It is passed the value the option would have had without it (from the app's
+``CSP_*`` settings or the defaults, or ``None``), and returns the value to use, so it can add to a
+setting rather than replace it:
+
+.. code:: python
+
+   app.config['CSP_FRAME_SRC'] = ['self']
+
+   @app.route('/viewer')
+   @csp(frame_src=lambda current: [*current, current_app.config['EMBED_ORIGIN']])
+   def viewer():
+       ...
+
+Returning ``None`` or an empty value leaves the directive out. Callables work with the extension,
+``csp`` and ``standalone_csp`` (where they are always passed ``None``, as nothing else applies).
+
 Some directives take restricted values:
 
 ``sandbox``

@@ -7,7 +7,10 @@ policy
 import json
 from enum import Enum
 
+from markupsafe import Markup
+
 from .constants import (
+    META_UNSUPPORTED_DIRECTIVES,
     Directive,
     FetchRestriction,
     SandboxRestriction,
@@ -366,3 +369,53 @@ class ReportOnlyPolicy(ContentSecurityPolicy):
             )
 
         return super().value
+
+
+def meta_policy(policy, self_origin=None):
+    """
+    A policy as it can be given by a ``<meta http-equiv="Content-Security-Policy">``
+    tag, or ``None`` if nothing is left of it.
+
+    ``policy`` is a :py:class:`ContentSecurityPolicy` or a header value. The
+    directives browsers ignore in a ``<meta>`` policy (``sandbox``,
+    ``frame-ancestors``, ``report-uri`` and ``report-to``) are left out. Pass
+    ``self_origin`` (e.g. ``https://example.com``) when the page will be served
+    from somewhere else, to put it in place of ``'self'``.
+    """
+
+    if isinstance(policy, ContentSecurityPolicy):
+        policy = policy.value
+    if not policy:
+        return None
+
+    unsupported = {directive.value for directive in META_UNSUPPORTED_DIRECTIVES}
+    self_origin = self_origin.rstrip("/") if self_origin else None
+
+    directives = []
+    for directive in policy.split(";"):
+        tokens = directive.split()
+        if not tokens or tokens[0].lower() in unsupported:
+            continue
+        if self_origin:
+            tokens = [
+                self_origin if token == FetchRestriction.SELF.value else token
+                for token in tokens
+            ]
+        directives.append(" ".join(tokens))
+
+    return "; ".join(directives) or None
+
+
+def meta_tag(policy, self_origin=None):
+    """
+    A ``<meta>`` tag giving the :py:func:`meta_policy` of ``policy``, as
+    :py:class:`~markupsafe.Markup`, or an empty one if nothing is left of it.
+    Browsers apply it only to what follows it, so put it early in ``<head>``.
+    """
+
+    value = meta_policy(policy, self_origin)
+    if value is None:
+        return Markup("")
+    return Markup('<meta http-equiv="Content-Security-Policy" content="{}">').format(
+        value
+    )

@@ -9,7 +9,7 @@ import logging
 
 from flask import current_app, make_response
 
-from .core import get_csp_options, set_csp_header
+from .core import get_csp_options, merge_options, set_csp_header
 
 LOG = logging.getLogger(__name__)
 
@@ -31,7 +31,8 @@ def csp(*args, **kwargs):
 
     It can be applied bare (``@csp``) for the default policy, or called with
     CSP directives and options (``@csp(script_src=['self'])``), see
-    :doc:`configuration`. Options are combined with the app's CSP_* settings.
+    :doc:`configuration`. Options are combined with the app's CSP_* settings;
+    a callable option is passed the setting's value, so it can add to it.
     """
 
     _options = kwargs
@@ -65,7 +66,7 @@ def standalone_csp(**kwargs):
     if not kwargs:
         raise TypeError("standalone_csp needs at least one directive")
 
-    _options = dict(kwargs)
+    _options = merge_options({}, kwargs)
 
     def wrapper(f):
         LOG.debug("Enabling %s for standalone csp using options: %s", f, _options)

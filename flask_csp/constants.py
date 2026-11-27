@@ -114,6 +114,16 @@ class SandboxRestriction(Enum):
     ALLOW_STORAGE_ACCESS_BY_USER_ACTIVATION = "allow-storage-access-by-user-activation"
 
 
+# Directives that browsers ignore in a policy given by a <meta> tag
+META_UNSUPPORTED_DIRECTIVES = frozenset(
+    {
+        Directive.FRAME_ANCESTORS,
+        Directive.REPORT_TO,
+        Directive.REPORT_URI,
+        Directive.SANDBOX,
+    }
+)
+
 # Attribute added to request object by decorator to indicate that CSP
 # was evaluated, in case the decorator and extension are both applied
 # to a view.

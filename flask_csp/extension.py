@@ -6,7 +6,7 @@ import logging
 
 from flask import Blueprint, Flask
 
-from .core import get_csp_options, set_csp_header
+from .core import EXTENSION_KEY, get_csp_options, set_csp_header
 from .simple.views import CSP_BP as simple_bp
 
 try:
@@ -74,6 +74,7 @@ class CSP:
             raise ValueError("Provided value was not a Flask app instance")
 
         self.setup_after_request(app, **kwargs)
+        app.extensions[EXTENSION_KEY] = self
 
         if receiver_prefix is not None:
             self._receiver_prefix = receiver_prefix
@@ -122,6 +123,7 @@ class CSP:
             raise ValueError("Provided value was not a Blueprint instance")
 
         self.setup_after_request(blueprint, **kwargs)
+        setattr(blueprint, f"_flask_{EXTENSION_KEY}", self)
 
     def setup_after_request(self, app_or_bp, **kwargs):
         """Adds the CSP header handler to the after request flow"""

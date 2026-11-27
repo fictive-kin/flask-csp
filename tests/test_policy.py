@@ -285,3 +285,45 @@ def test_report_only_csp_fail():
 
     with pytest.raises(ValueError):
         csp.value
+
+
+def test_meta_policy():
+    """Header-only directives are dropped, and 'self' can be rehomed."""
+
+    from flask_csp import meta_policy
+
+    header = (
+        "sandbox; default-src 'none'; script-src 'self' https://cdn.example.com; "
+        "frame-ancestors 'self'; report-uri /csp; report-to group"
+    )
+    assert (
+        meta_policy(header)
+        == "default-src 'none'; script-src 'self' https://cdn.example.com"
+    )
+    assert meta_policy(header, "https://example.com/") == (
+        "default-src 'none'; script-src https://example.com https://cdn.example.com"
+    )
+    assert meta_policy("sandbox; frame-ancestors 'none'") is None
+    assert meta_policy("") is None
+    assert meta_policy(None) is None
+
+    policy = ContentSecurityPolicy(
+        load_directive("sandbox"), load_directive("img_src", "self", "data:")
+    )
+    assert meta_policy(policy) == "img-src 'self' data:"
+
+
+def test_meta_tag():
+    from markupsafe import Markup
+
+    from flask_csp import meta_tag
+
+    tag = meta_tag("default-src 'self'; sandbox", "https://example.com")
+    assert isinstance(tag, Markup)
+    assert tag == (
+        '<meta http-equiv="Content-Security-Policy" content="default-src https://example.com">'
+    )
+    assert meta_tag("default-src 'none'") == (
+        '<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;">'
+    )
+    assert meta_tag("sandbox") == Markup("")
